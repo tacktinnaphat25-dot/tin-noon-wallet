@@ -19,8 +19,9 @@
         .total-info { border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px; display: flex; justify-content: space-around; text-align: center; }
         .card { background: var(--card); border-radius: 20px; padding: 18px; margin-bottom: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
         .sec-title { font-size: 0.95rem; font-weight: 600; margin-bottom: 12px; border-left: 4px solid var(--tack); padding-left: 10px; display: flex; justify-content: space-between; align-items: center; }
-        input, select { width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 0.9rem; background: #f8fafc; font-family: inherit; margin-bottom: 10px; box-sizing: border-box; }
-        .btn-save { width: 100%; background: var(--dark); color: white; border: none; padding: 12px; border-radius: 10px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: 0.2s; }
+        input, select { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 12px; font-size: 1rem; background: #f8fafc; font-family: inherit; margin-bottom: 10px; box-sizing: border-box; }
+        .btn-save { width: 100%; background: var(--dark); color: white; border: none; padding: 15px; border-radius: 12px; font-size: 1.1rem; font-weight: 600; cursor: pointer; transition: 0.2s; }
+        .btn-save:disabled { background: #64748b; cursor: not-allowed; }
         .history-container { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
         .history-scroll { max-height: 400px; overflow-y: auto; padding-right: 5px; }
         .column-header { padding: 10px; border-radius: 12px; margin-bottom: 10px; text-align: center; color: white; font-weight: 600; font-size: 0.9rem; }
@@ -39,6 +40,7 @@
 
 <div class="main-wrapper">
     <div class="control-side">
+        <!-- สรุปเงิน -->
         <div class="summary-card">
             <div class="balance-grid">
                 <div class="balance-box">
@@ -56,25 +58,26 @@
             </div>
         </div>
 
+        <!-- งบประมาณ -->
         <div class="card">
             <div class="sec-title">งบประมาณเดือนนี้</div>
             <div style="display:flex; justify-content:space-between; align-items:center;">
-                <button onclick="adjustJointBudget(-1000)" style="border:none; background:#eee; padding:5px 10px; border-radius:5px; cursor:pointer;">-</button>
-                <strong id="jointBudgetTxt">฿0</strong>
-                <button onclick="adjustJointBudget(1000)" style="border:none; background:#eee; padding:5px 10px; border-radius:5px; cursor:pointer;">+</button>
+                <button onclick="adjustJointBudget(-1000)" style="border:none; background:#eee; padding:5px 15px; border-radius:8px; cursor:pointer;">-</button>
+                <strong id="jointBudgetTxt" style="font-size: 1.2rem;">฿0</strong>
+                <button onclick="adjustJointBudget(1000)" style="border:none; background:#eee; padding:5px 15px; border-radius:8px; cursor:pointer;">+</button>
             </div>
             <div class="progress-bg"><div id="jointProgressBar" class="progress-fill"></div></div>
-            <div style="display:flex; justify-content:space-between; font-size:0.7rem;">
+            <div style="display:flex; justify-content:space-between; font-size:0.75rem;">
                 <span id="jointSpentTxt" style="color:var(--danger)">ใช้ไป: ฿0</span>
                 <span id="jointRemainingTxt" style="color:var(--success)">คงเหลือ: ฿0</span>
             </div>
         </div>
 
+        <!-- ฟอร์มบันทึก -->
         <div class="card">
-            <div class="sec-title" id="formTitle">บันทึกรายการ</div>
-            <input type="hidden" id="editId">
+            <div class="sec-title">บันทึกรายการ</div>
             <!-- ช่องแสดงวันที่แบบ พ.ศ. -->
-            <input type="text" id="displayDatetime" readonly style="cursor:pointer;" onclick="document.getElementById('datetime').showPicker()">
+            <input type="text" id="displayDatetime" readonly style="cursor:pointer; font-weight: bold; color: var(--dark);" onclick="document.getElementById('datetime').showPicker()">
             <input type="datetime-local" id="datetime" style="display:none;" onchange="syncTimeDisplay()">
             
             <select id="desc">
@@ -86,7 +89,7 @@
                 <option>เงินเสริม</option><option>เงินออม (พิเศษ)</option>
             </select>
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-                <input type="number" id="amount" placeholder="0.00" step="0.01">
+                <input type="number" id="amount" placeholder="จำนวนเงิน" step="0.01" inputmode="decimal">
                 <select id="owner"><option value="ติณห์ภัทร">ติณห์ภัทร</option><option value="นัฐณวรรณ">นัฐณวรรณ</option></select>
             </div>
             <select id="type">
@@ -97,6 +100,7 @@
         </div>
     </div>
 
+    <!-- ประวัติ -->
     <div class="history-side">
         <div class="history-container">
             <div class="history-column">
@@ -116,15 +120,15 @@
 </div>
 
 <script>
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw0qs6R-sLfImnA5b-y_YUYbLKLE-rmQ1cWnxm6tEJsIgpiL6GeCJYBTdkpM9NU0P4S/exec";
+    const SCRIPT_URL = "https://google.com";
     let transactions = [];
     let jointBudget = parseFloat(localStorage.getItem('jointBudget')) || 10000;
 
+    // ฟังก์ชันแปลง ค.ศ. เป็น พ.ศ. และแสดงผลเวลาไทย
     function syncTimeDisplay() {
         const val = document.getElementById('datetime').value;
         if (!val) return;
         const d = new Date(val);
-        // บังคับให้แสดงผลเป็นปี พ.ศ.
         const thYear = d.getFullYear() + 543;
         const thDay = String(d.getDate()).padStart(2, '0');
         const thMonth = String(d.getMonth() + 1).padStart(2, '0');
@@ -158,33 +162,41 @@
             const data = await res.json();
             transactions = Array.isArray(data) ? data : [];
             updateUI();
-        } catch (e) { console.error("Error loading:", e); }
+        } catch (e) { console.error("Error:", e); }
         btn.innerText = "บันทึกข้อมูล (Enter)";
     }
 
     async function saveTransaction() {
         const amount = parseFloat(document.getElementById('amount').value);
         if (!amount || amount <= 0) return alert('กรุณากรอกจำนวนเงิน');
+
         const btn = document.getElementById('saveBtn');
-        btn.disabled = true; btn.innerText = "กำลังบันทึก...";
+        btn.disabled = true;
+        btn.innerText = "กำลังบันทึก...";
+
+        const data = {
+            action: 'save',
+            id: Date.now().toString(),
+            datetime: document.getElementById('datetime').value,
+            desc: document.getElementById('desc').value,
+            amount: amount,
+            owner: document.getElementById('owner').value,
+            type: document.getElementById('type').value
+        };
+
         try {
-            const data = {
-                action: 'save', id: Date.now().toString(),
-                datetime: document.getElementById('datetime').value,
-                desc: document.getElementById('desc').value,
-                amount: amount, owner: document.getElementById('owner').value, type: document.getElementById('type').value
-            };
             const response = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(data) });
             const result = await response.json();
-            if (result.result === 'success') { 
-                await loadData(); 
-                document.getElementById('amount').value = ''; 
-                setThaiTime(); 
+            if (result.result === 'success') {
+                await loadData();
+                document.getElementById('amount').value = '';
+                setThaiTime();
             } else {
-                alert("บันทึกไม่สำเร็จ: " + (result.message || "Unknown error"));
+                alert("บันทึกไม่สำเร็จ: " + result.message);
             }
-        } catch (e) { alert("บันทึกไม่สำเร็จ กรุณาตรวจสอบ Google Script"); }
-        btn.disabled = false; btn.innerText = "บันทึกข้อมูล (Enter)";
+        } catch (e) { alert("บันทึกไม่สำเร็จ กรุณาเช็กชื่อแผ่นงาน transactions ใน Google Sheets"); }
+        btn.disabled = false;
+        btn.innerText = "บันทึกข้อมูล (Enter)";
     }
 
     function updateUI() {
