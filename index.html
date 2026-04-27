@@ -110,7 +110,7 @@
 </div>
 
 <script>
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwB_MFhsWkbYMDosK4GhmbJg4swUsJmx0PwlLPSxG6bMU2iDbW6-KmDMVyORARVk_5Z/exec";
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwYAKSB3rNE3kfaU1hKFaiGECVm5ZYgOw0UoRAWiiNrH0ZtPVQu8BSRaJxbeATXE_G0/exec";
     let transactions = [];
     let jointBudget = parseFloat(localStorage.getItem('jointBudget')) || 10000;
 
@@ -126,7 +126,8 @@
         btn.innerText = "กำลังโหลดข้อมูล...";
         try {
             const res = await fetch(SCRIPT_URL);
-            transactions = await res.json();
+            const data = await res.json();
+            transactions = Array.isArray(data) ? data : [];
             updateUI();
         } catch (e) { console.error("Error loading:", e); }
         btn.innerText = "บันทึกข้อมูล (Enter)";
@@ -151,10 +152,17 @@
         btn.innerText = "กำลังบันทึก...";
 
         try {
-            await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(data) });
-            await loadData();
-            document.getElementById('amount').value = '';
-        } catch (e) { alert("บันทึกไม่สำเร็จ"); }
+            const response = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(data) });
+            const result = await response.json();
+            if (result.result === 'success') {
+                await loadData();
+                document.getElementById('amount').value = '';
+            } else {
+                alert("บันทึกไม่สำเร็จ: " + result.message);
+            }
+        } catch (e) { 
+            alert("บันทึกไม่สำเร็จ กรุณาตรวจสอบการตั้งค่า Google Script"); 
+        }
         btn.disabled = false;
         btn.innerText = "บันทึกข้อมูล (Enter)";
     }
@@ -164,8 +172,6 @@
         document.getElementById('historyTack').innerHTML = '';
         document.getElementById('historyNoon').innerHTML = '';
         document.getElementById('historySavings').innerHTML = '';
-
-        if (!Array.isArray(transactions)) return;
 
         [...transactions].reverse().forEach(t => {
             const amt = parseFloat(t.amount);
