@@ -73,11 +73,17 @@
         <div class="card">
             <div class="sec-title" id="formTitle">บันทึกรายการ</div>
             <input type="hidden" id="editId">
-            <input type="datetime-local" id="datetime">
+            <!-- ช่องแสดงวันที่แบบ พ.ศ. -->
+            <input type="text" id="displayDatetime" readonly style="cursor:pointer;" onclick="document.getElementById('datetime').showPicker()">
+            <input type="datetime-local" id="datetime" style="display:none;" onchange="syncTimeDisplay()">
+            
             <select id="desc">
-                <option>ค่าอาหาร</option><option>ค่าน้ำมัน</option><option>ค่ารถ</option>
-                <option>ค่าใช้จ่ายส่วนตัว</option><option>เงินเดือน</option><option>เงินออม (พิเศษ)</option>
-                <option>ค่าเกม PS5</option><option>ค่าไปเที่ยว</option><option>เงินเสริม</option>
+                <option>ค่าอาหาร</option><option>ค่าของกิน/ขนม</option><option>ค่าน้ำมัน</option>
+                <option>ค่าเน็ตมือถือ</option><option>ค่าสมาชิก (Netflix/Spotify)</option>
+                <option>ค่ารถ/ค่าเดินทาง</option><option>ค่าของใช้ในบ้าน</option><option>ค่าอาหารสัตว์</option>
+                <option>ค่าซ่อมแซม/ดูแลรถ</option><option>ค่าใช้จ่ายส่วนตัว</option><option>ค่าช้อปปิ้ง</option>
+                <option>ค่าไปเที่ยว</option><option>ค่าเกม PS5</option><option>เงินเดือน</option>
+                <option>เงินเสริม</option><option>เงินออม (พิเศษ)</option>
             </select>
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
                 <input type="number" id="amount" placeholder="0.00" step="0.01">
@@ -110,14 +116,37 @@
 </div>
 
 <script>
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwYAKSB3rNE3kfaU1hKFaiGECVm5ZYgOw0UoRAWiiNrH0ZtPVQu8BSRaJxbeATXE_G0/exec";
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw0qs6R-sLfImnA5b-y_YUYbLKLE-rmQ1cWnxm6tEJsIgpiL6GeCJYBTdkpM9NU0P4S/exec";
     let transactions = [];
     let jointBudget = parseFloat(localStorage.getItem('jointBudget')) || 10000;
 
-    window.onload = function() {
+    function syncTimeDisplay() {
+        const val = document.getElementById('datetime').value;
+        if (!val) return;
+        const d = new Date(val);
+        // บังคับให้แสดงผลเป็นปี พ.ศ.
+        const thYear = d.getFullYear() + 543;
+        const thDay = String(d.getDate()).padStart(2, '0');
+        const thMonth = String(d.getMonth() + 1).padStart(2, '0');
+        const thHour = String(d.getHours()).padStart(2, '0');
+        const thMin = String(d.getMinutes()).padStart(2, '0');
+        document.getElementById('displayDatetime').value = `${thDay}/${thMonth}/${thYear} ${thHour}:${thMin}`;
+    }
+
+    function setThaiTime() {
         const now = new Date();
-        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-        document.getElementById('datetime').value = now.toISOString().slice(0, 16);
+        const thaiTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Bangkok"}));
+        const year = thaiTime.getFullYear();
+        const month = String(thaiTime.getMonth() + 1).padStart(2, '0');
+        const day = String(thaiTime.getDate()).padStart(2, '0');
+        const hour = String(thaiTime.getHours()).padStart(2, '0');
+        const min = String(thaiTime.getMinutes()).padStart(2, '0');
+        document.getElementById('datetime').value = `${year}-${month}-${day}T${hour}:${min}`;
+        syncTimeDisplay();
+    }
+
+    window.onload = function() {
+        setThaiTime();
         loadData();
     };
 
@@ -136,35 +165,26 @@
     async function saveTransaction() {
         const amount = parseFloat(document.getElementById('amount').value);
         if (!amount || amount <= 0) return alert('กรุณากรอกจำนวนเงิน');
-
-        const data = {
-            action: 'save',
-            id: Date.now().toString(),
-            datetime: document.getElementById('datetime').value,
-            desc: document.getElementById('desc').value,
-            amount: amount,
-            owner: document.getElementById('owner').value,
-            type: document.getElementById('type').value
-        };
-
         const btn = document.getElementById('saveBtn');
-        btn.disabled = true;
-        btn.innerText = "กำลังบันทึก...";
-
+        btn.disabled = true; btn.innerText = "กำลังบันทึก...";
         try {
+            const data = {
+                action: 'save', id: Date.now().toString(),
+                datetime: document.getElementById('datetime').value,
+                desc: document.getElementById('desc').value,
+                amount: amount, owner: document.getElementById('owner').value, type: document.getElementById('type').value
+            };
             const response = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(data) });
             const result = await response.json();
-            if (result.result === 'success') {
-                await loadData();
-                document.getElementById('amount').value = '';
+            if (result.result === 'success') { 
+                await loadData(); 
+                document.getElementById('amount').value = ''; 
+                setThaiTime(); 
             } else {
-                alert("บันทึกไม่สำเร็จ: " + result.message);
+                alert("บันทึกไม่สำเร็จ: " + (result.message || "Unknown error"));
             }
-        } catch (e) { 
-            alert("บันทึกไม่สำเร็จ กรุณาตรวจสอบการตั้งค่า Google Script"); 
-        }
-        btn.disabled = false;
-        btn.innerText = "บันทึกข้อมูล (Enter)";
+        } catch (e) { alert("บันทึกไม่สำเร็จ กรุณาตรวจสอบ Google Script"); }
+        btn.disabled = false; btn.innerText = "บันทึกข้อมูล (Enter)";
     }
 
     function updateUI() {
@@ -179,7 +199,15 @@
             let prefix = t.type === 'expense' ? '-' : (t.type === 'income' ? '+' : '➡️');
             if(t.type === 'save_out') prefix = '⬅️';
 
-            let itemHtml = `<div class="item"><div><div style="font-weight:600; font-size:0.85rem;">${t.desc}</div><small style="color:#94a3b8; font-size:0.7rem;">${t.datetime.replace('T', ' ')}</small></div><div class="${colorClass}">${prefix}฿${amt.toLocaleString(undefined, {minimumFractionDigits: 2})}</div></div>`;
+            const d = new Date(t.datetime);
+            const thYear = d.getFullYear() + 543;
+            const thDay = String(d.getDate()).padStart(2, '0');
+            const thMonth = String(d.getMonth() + 1).padStart(2, '0');
+            const thHour = String(d.getHours()).padStart(2, '0');
+            const thMin = String(d.getMinutes()).padStart(2, '0');
+            const displayDate = `${thDay}/${thMonth}/${thYear} ${thHour}:${thMin}`;
+
+            let itemHtml = `<div class="item"><div><div style="font-weight:600; font-size:0.85rem;">${t.desc}</div><small style="color:#94a3b8; font-size:0.7rem;">${displayDate}</small></div><div class="${colorClass}">${prefix}฿${amt.toLocaleString(undefined, {minimumFractionDigits: 2})}</div></div>`;
 
             if (t.type === 'expense') {
                 if (t.owner === 'ติณห์ภัทร') tackCash -= amt; else noonCash -= amt;
@@ -210,11 +238,7 @@
         document.getElementById('jointProgressBar').style.width = Math.min((jointSpent/jointBudget)*100, 100) + '%';
     }
 
-    function adjustJointBudget(val) {
-        jointBudget += val;
-        localStorage.setItem('jointBudget', jointBudget);
-        updateUI();
-    }
+    function adjustJointBudget(val) { jointBudget += val; localStorage.setItem('jointBudget', jointBudget); updateUI(); }
 </script>
 </body>
 </html>
