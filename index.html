@@ -110,7 +110,7 @@
 </div>
 
 <script>
-    const SCRIPT_URL = "https://google.com";
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwB_MFhsWkbYMDosK4GhmbJg4swUsJmx0PwlLPSxG6bMU2iDbW6-KmDMVyORARVk_5Z/exec";
     let transactions = [];
     let jointBudget = parseFloat(localStorage.getItem('jointBudget')) || 10000;
 
@@ -122,13 +122,14 @@
     };
 
     async function loadData() {
-        document.getElementById('saveBtn').innerText = "กำลังโหลดข้อมูล...";
+        const btn = document.getElementById('saveBtn');
+        btn.innerText = "กำลังโหลดข้อมูล...";
         try {
             const res = await fetch(SCRIPT_URL);
             transactions = await res.json();
             updateUI();
-        } catch (e) { console.error(e); }
-        document.getElementById('saveBtn').innerText = "บันทึกข้อมูล (Enter)";
+        } catch (e) { console.error("Error loading:", e); }
+        btn.innerText = "บันทึกข้อมูล (Enter)";
     }
 
     async function saveTransaction() {
@@ -145,16 +146,17 @@
             type: document.getElementById('type').value
         };
 
-        document.getElementById('saveBtn').disabled = true;
-        document.getElementById('saveBtn').innerText = "กำลังบันทึก...";
+        const btn = document.getElementById('saveBtn');
+        btn.disabled = true;
+        btn.innerText = "กำลังบันทึก...";
 
         try {
             await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(data) });
             await loadData();
             document.getElementById('amount').value = '';
         } catch (e) { alert("บันทึกไม่สำเร็จ"); }
-        document.getElementById('saveBtn').disabled = false;
-        document.getElementById('saveBtn').innerText = "บันทึกข้อมูล (Enter)";
+        btn.disabled = false;
+        btn.innerText = "บันทึกข้อมูล (Enter)";
     }
 
     function updateUI() {
@@ -163,14 +165,16 @@
         document.getElementById('historyNoon').innerHTML = '';
         document.getElementById('historySavings').innerHTML = '';
 
+        if (!Array.isArray(transactions)) return;
+
         [...transactions].reverse().forEach(t => {
+            const amt = parseFloat(t.amount);
             let colorClass = t.type === 'expense' ? 'amt-minus' : (t.type === 'income' ? 'amt-plus' : 'amt-save');
             let prefix = t.type === 'expense' ? '-' : (t.type === 'income' ? '+' : '➡️');
             if(t.type === 'save_out') prefix = '⬅️';
 
-            let itemHtml = `<div class="item"><div><div style="font-weight:600; font-size:0.85rem;">${t.desc}</div><small style="color:#94a3b8; font-size:0.7rem;">${t.datetime.replace('T', ' ')}</small></div><div class="${colorClass}">${prefix}฿${parseFloat(t.amount).toLocaleString(undefined, {minimumFractionDigits: 2})}</div></div>`;
+            let itemHtml = `<div class="item"><div><div style="font-weight:600; font-size:0.85rem;">${t.desc}</div><small style="color:#94a3b8; font-size:0.7rem;">${t.datetime.replace('T', ' ')}</small></div><div class="${colorClass}">${prefix}฿${amt.toLocaleString(undefined, {minimumFractionDigits: 2})}</div></div>`;
 
-            const amt = parseFloat(t.amount);
             if (t.type === 'expense') {
                 if (t.owner === 'ติณห์ภัทร') tackCash -= amt; else noonCash -= amt;
                 jointSpent += amt;
@@ -189,10 +193,10 @@
             else document.getElementById('historyNoon').innerHTML += itemHtml;
         });
 
-        document.getElementById('tackBalance').innerText = `฿${tackCash.toLocaleString()}`;
-        document.getElementById('noonBalance').innerText = `฿${noonCash.toLocaleString()}`;
-        document.getElementById('totalSavings').innerText = `฿${totalSavings.toLocaleString()}`;
-        document.getElementById('netTotal').innerText = `฿${(tackCash+noonCash+totalSavings).toLocaleString()}`;
+        document.getElementById('tackBalance').innerText = `฿${tackCash.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+        document.getElementById('noonBalance').innerText = `฿${noonCash.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+        document.getElementById('totalSavings').innerText = `฿${totalSavings.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+        document.getElementById('netTotal').innerText = `฿${(tackCash+noonCash+totalSavings).toLocaleString(undefined, {minimumFractionDigits: 2})}`;
         
         document.getElementById('jointBudgetTxt').innerText = `฿${jointBudget.toLocaleString()}`;
         document.getElementById('jointSpentTxt').innerText = `ใช้ไป: ฿${jointSpent.toLocaleString()}`;
