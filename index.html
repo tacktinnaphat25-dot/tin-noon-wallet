@@ -10,18 +10,27 @@
         body { font-family: 'Kanit', sans-serif; background-color: var(--bg); margin: 0; padding: 15px; color: var(--dark); }
         .main-wrapper { display: grid; grid-template-columns: 350px 1fr; gap: 20px; max-width: 1300px; margin: auto; }
         @media (max-width: 1000px) { .main-wrapper { grid-template-columns: 1fr; } }
-        .summary-card { background: var(--dark); color: white; padding: 20px; border-radius: 20px; margin-bottom: 15px; }
+        
+        .summary-card { background: var(--dark); color: white; padding: 20px; border-radius: 20px; margin-bottom: 15px; box-shadow: 0 10px 20px rgba(0,0,0,0.15); }
         .balance-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
         .balance-box { background: rgba(255,255,255,0.05); padding: 15px; border-radius: 15px; border-top: 4px solid var(--tack); }
         .balance-box.noon { border-top-color: var(--noon); }
         .box-amt { font-size: 1.3rem; font-weight: 600; }
+        
         .card { background: var(--card); border-radius: 20px; padding: 18px; margin-bottom: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-        input, select { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 12px; font-size: 1rem; margin-bottom: 10px; box-sizing: border-box; }
-        .btn-save { width: 100%; background: var(--dark); color: white; border: none; padding: 15px; border-radius: 12px; font-size: 1.1rem; font-weight: 600; cursor: pointer; }
-        .item { background: white; border-radius: 15px; padding: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        .sec-title { font-size: 0.95rem; font-weight: 600; margin-bottom: 12px; border-left: 4px solid var(--tack); padding-left: 10px; display: flex; justify-content: space-between; align-items: center; }
+        
+        input, select { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 12px; font-size: 1rem; background: #f8fafc; font-family: inherit; margin-bottom: 10px; box-sizing: border-box; }
+        .btn-save { width: 100%; background: var(--dark); color: white; border: none; padding: 15px; border-radius: 12px; font-size: 1.1rem; font-weight: 600; cursor: pointer; transition: 0.2s; }
+        
+        .item { background: white; border-radius: 15px; padding: 15px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); display: flex; justify-content: space-between; align-items: center; border-left: 5px solid transparent; }
+        .tack-item { border-left-color: var(--tack); }
+        .noon-item { border-left-color: var(--noon); }
+        
         .amt-plus { color: var(--success); font-weight: 600; }
         .amt-minus { color: var(--danger); font-weight: 600; }
-        .btn-delete { background: #fee2e2; color: #ef4444; border: none; padding: 5px 12px; border-radius: 8px; font-size: 0.75rem; cursor: pointer; margin-top: 8px; font-family: 'Kanit'; }
+        
+        .btn-delete { background: #fee2e2; color: #ef4444; border: none; padding: 6px 12px; border-radius: 8px; font-size: 0.75rem; cursor: pointer; margin-top: 8px; font-family: 'Kanit'; font-weight: 600; }
         .progress-bg { background: #e2e8f0; height: 8px; border-radius: 4px; overflow: hidden; margin: 10px 0; }
         .progress-fill { height: 100%; width: 0%; background: var(--success); transition: 0.5s; }
     </style>
@@ -30,40 +39,60 @@
 
 <div class="main-wrapper">
     <div class="control-side">
+        <!-- Dashboard -->
         <div class="summary-card">
             <div class="balance-grid">
                 <div class="balance-box"><span>💵 ติณห์ภัทร</span><div class="box-amt" id="tackBalance">฿0.00</div></div>
                 <div class="balance-box noon"><span>💵 นัฐณวรรณ</span><div class="box-amt" id="noonBalance">฿0.00</div></div>
             </div>
-            <div style="text-align:center;">💰 เงินรวม: <span id="netTotal">฿0.00</span></div>
+            <div style="text-align:center; font-weight:600;">💰 เงินรวม: <span id="netTotal">฿0.00</span></div>
         </div>
 
         <div class="card">
-            <strong>งบประมาณ</strong>
+            <div class="sec-title">งบประมาณเดือนนี้</div>
             <div class="progress-bg"><div id="jointProgressBar" class="progress-fill"></div></div>
         </div>
 
+        <!-- บันทึกรายการ -->
         <div class="card">
-            <div style="margin-bottom: 5px; font-size: 0.8rem;">วันที่/เวลา</div>
+            <div class="sec-title">บันทึกรายการ</div>
             <input type="text" id="displayDatetime" readonly style="cursor:pointer; font-weight:bold;" onclick="document.getElementById('datetime').showPicker()">
             <input type="datetime-local" id="datetime" style="display:none;" onchange="syncTimeDisplay()">
             
-            <select id="desc"><option>ค่าอาหาร</option><option>ค่าของกิน/ขนม</option><option>ค่าน้ำมัน</option><option>เงินเดือน</option><option>ค่าไปเที่ยว</option></select>
-            <input type="number" id="amount" placeholder="จำนวนเงิน" inputmode="decimal">
-            <select id="owner"><option>ติณห์ภัทร</option><option>นัฐณวรรณ</option></select>
-            <select id="type"><option value="expense">รายจ่าย (-)</option><option value="income">รายรับ (+)</option></select>
+            <select id="desc">
+                <option>ค่าอาหาร</option><option>ค่าของกิน/ขนม</option><option>ค่าน้ำมัน</option>
+                <option>ค่าเน็ตมือถือ</option><option>ค่าสมาชิก (Netflix/Spotify)</option>
+                <option>ค่ารถ/ค่าเดินทาง</option><option>ค่าของใช้ในบ้าน</option><option>ค่าอาหารสัตว์</option>
+                <option>ค่าซ่อมแซม/ดูแลรถ</option><option>ค่าใช้จ่ายส่วนตัว</option><option>ค่าช้อปปิ้ง</option>
+                <option>ค่าไปเที่ยว</option><option>ค่าเกม PS5</option><option>เงินเดือน</option>
+                <option>เงินเสริม</option><option>เงินออม (พิเศษ)</option>
+            </select>
+            
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                <input type="number" id="amount" placeholder="จำนวนเงิน" step="0.01" inputmode="decimal">
+                <select id="owner"><option value="ติณห์ภัทร">ติณห์ภัทร</option><option value="นัฐณวรรณ">นัฐณวรรณ</option></select>
+            </div>
+            
+            <select id="type">
+                <option value="expense">รายจ่าย (-)</option><option value="income">รายรับ (+)</option>
+                <option value="save_in">➡️ นำเข้าเงินออม</option><option value="save_out">⬅️ นำออกเงินออม</option>
+            </select>
+            
             <button class="btn-save" id="saveBtn" onclick="saveTransaction()">บันทึกข้อมูล</button>
         </div>
     </div>
 
+    <!-- ประวัติ -->
     <div class="history-side">
+        <div class="sec-title">ประวัติการทำรายการ</div>
         <div id="historyList"></div>
     </div>
 </div>
 
 <script>
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby7FxK36Rmm4g9gZU84SOnm-NBBW5T-K2KS6FcfXEdNVsPbLnkQmLqm-CiU4lGpZgE/exec";
+    const SCRIPT_URL = "https://google.com";
     let transactions = [];
+    let jointBudget = 10000;
 
     function formatThaiDate(dateStr) {
         if (!dateStr) return "ไม่ระบุเวลา";
@@ -97,24 +126,31 @@
     }
 
     async function loadData() {
+        const btn = document.getElementById('saveBtn');
+        btn.innerText = "กำลังโหลดข้อมูล...";
         try {
             const res = await fetch(SCRIPT_URL);
-            transactions = await res.json();
+            const data = await res.json();
+            transactions = Array.isArray(data) ? data : [];
             updateUI();
         } catch (e) { console.error(e); }
+        btn.innerText = "บันทึกข้อมูล";
     }
 
     async function saveTransaction() {
+        const amount = parseFloat(document.getElementById('amount').value);
+        if (!amount) return alert('กรุณากรอกจำนวนเงิน');
+        
         const btn = document.getElementById('saveBtn');
         btn.disabled = true; btn.innerText = "กำลังบันทึก...";
+        
         const data = {
             action: 'save', id: Date.now().toString(),
             datetime: document.getElementById('datetime').value,
             desc: document.getElementById('desc').value,
-            amount: document.getElementById('amount').value,
-            owner: document.getElementById('owner').value,
-            type: document.getElementById('type').value
+            amount: amount, owner: document.getElementById('owner').value, type: document.getElementById('type').value
         };
+        
         try {
             await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(data) });
             await loadData();
@@ -125,7 +161,7 @@
     }
 
     async function deleteItem(id) {
-        if (!confirm('ยืนยันจะลบรายการนี้?')) return;
+        if (!confirm('ยืนยันจะลบรายการนี้ออกจากระบบ?')) return;
         try {
             await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({action: 'delete', id: id}) });
             await loadData();
@@ -133,28 +169,47 @@
     }
 
     function updateUI() {
-        let tack = 0, noon = 0, listHtml = '';
+        let tack = 0, noon = 0, totalSavings = 0, spent = 0, listHtml = '';
+        
         [...transactions].reverse().forEach(t => {
             const amt = parseFloat(t.amount);
+            const isTack = t.owner === 'ติณห์ภัทร';
+            
             if (t.type === 'expense') {
-                if (t.owner === 'ติณห์ภัทร') tack -= amt; else noon -= amt;
-            } else {
-                if (t.owner === 'ติณห์ภัทร') tack += amt; else noon += amt;
+                if (isTack) tack -= amt; else noon -= amt;
+                spent += amt;
+            } else if (t.type === 'income') {
+                if (isTack) tack += amt; else noon += amt;
+            } else if (t.type === 'save_in') {
+                if (isTack) tack -= amt; else noon -= amt;
+                totalSavings += amt;
+            } else if (t.type === 'save_out') {
+                if (isTack) tack += amt; else noon += amt;
+                totalSavings -= amt;
             }
+
+            let color = (t.type === 'expense') ? 'amt-minus' : 'amt-plus';
+            if (t.type.startsWith('save')) color = 'amt-save';
+            let prefix = (t.type === 'expense') ? '-' : '+';
+            if (t.type === 'save_in') prefix = '➡️';
+            if (t.type === 'save_out') prefix = '⬅️';
+
             listHtml += `
-                <div class="item">
+                <div class="item ${isTack ? 'tack-item' : 'noon-item'}">
                     <div>
-                        <b>${t.desc}</b> (${t.owner})<br>
+                        <b>${t.desc}</b> <small>(${t.owner})</small><br>
                         <small style="color:#94a3b8;">${formatThaiDate(t.datetime)}</small><br>
-                        <button class="btn-delete" onclick="deleteItem('${t.id}')">ลบรายการนี้</button>
+                        <button class="btn-delete" onclick="deleteItem('${t.id}')">ลบรายการ</button>
                     </div>
-                    <div class="${t.type === 'expense' ? 'amt-minus' : 'amt-plus'}">฿${amt.toLocaleString()}</div>
+                    <div class="${color}">${prefix}฿${amt.toLocaleString()}</div>
                 </div>`;
         });
+
         document.getElementById('tackBalance').innerText = `฿${tack.toLocaleString()}`;
         document.getElementById('noonBalance').innerText = `฿${noon.toLocaleString()}`;
-        document.getElementById('netTotal').innerText = `฿${(tack+noon).toLocaleString()}`;
+        document.getElementById('netTotal').innerText = `฿${(tack + noon + totalSavings).toLocaleString()}`;
         document.getElementById('historyList').innerHTML = listHtml;
+        document.getElementById('jointProgressBar').style.width = Math.min((spent / jointBudget) * 100, 100) + '%';
     }
 
     window.onload = () => { setThaiTime(); loadData(); };
