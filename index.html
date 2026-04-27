@@ -21,8 +21,6 @@
         .sec-title { font-size: 0.95rem; font-weight: 600; margin-bottom: 12px; border-left: 4px solid var(--tack); padding-left: 10px; display: flex; justify-content: space-between; align-items: center; }
         input, select { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 12px; font-size: 1rem; background: #f8fafc; font-family: inherit; margin-bottom: 10px; box-sizing: border-box; }
         .btn-save { width: 100%; background: var(--dark); color: white; border: none; padding: 15px; border-radius: 12px; font-size: 1.1rem; font-weight: 600; cursor: pointer; transition: 0.2s; }
-        .btn-save:disabled { background: #64748b; cursor: not-allowed; }
-        .history-container { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
         .history-scroll { max-height: 400px; overflow-y: auto; padding-right: 5px; }
         .column-header { padding: 10px; border-radius: 12px; margin-bottom: 10px; text-align: center; color: white; font-weight: 600; font-size: 0.9rem; }
         .header-tack { background: var(--tack); }
@@ -40,7 +38,6 @@
 
 <div class="main-wrapper">
     <div class="control-side">
-        <!-- สรุปเงิน -->
         <div class="summary-card">
             <div class="balance-grid">
                 <div class="balance-box">
@@ -58,26 +55,19 @@
             </div>
         </div>
 
-        <!-- งบประมาณ -->
         <div class="card">
             <div class="sec-title">งบประมาณเดือนนี้</div>
             <div style="display:flex; justify-content:space-between; align-items:center;">
                 <button onclick="adjustJointBudget(-1000)" style="border:none; background:#eee; padding:5px 15px; border-radius:8px; cursor:pointer;">-</button>
-                <strong id="jointBudgetTxt" style="font-size: 1.2rem;">฿0</strong>
+                <strong id="jointBudgetTxt">฿0</strong>
                 <button onclick="adjustJointBudget(1000)" style="border:none; background:#eee; padding:5px 15px; border-radius:8px; cursor:pointer;">+</button>
             </div>
             <div class="progress-bg"><div id="jointProgressBar" class="progress-fill"></div></div>
-            <div style="display:flex; justify-content:space-between; font-size:0.75rem;">
-                <span id="jointSpentTxt" style="color:var(--danger)">ใช้ไป: ฿0</span>
-                <span id="jointRemainingTxt" style="color:var(--success)">คงเหลือ: ฿0</span>
-            </div>
         </div>
 
-        <!-- ฟอร์มบันทึก -->
         <div class="card">
             <div class="sec-title">บันทึกรายการ</div>
-            <!-- ช่องแสดงวันที่แบบ พ.ศ. -->
-            <input type="text" id="displayDatetime" readonly style="cursor:pointer; font-weight: bold; color: var(--dark);" onclick="document.getElementById('datetime').showPicker()">
+            <input type="text" id="displayDatetime" readonly style="cursor:pointer;" onclick="document.getElementById('datetime').showPicker()">
             <input type="datetime-local" id="datetime" style="display:none;" onchange="syncTimeDisplay()">
             
             <select id="desc">
@@ -96,11 +86,10 @@
                 <option value="expense">รายจ่าย (-)</option><option value="income">รายรับ (+)</option>
                 <option value="save_in">➡️ นำเข้าเงินออม</option><option value="save_out">⬅️ นำออกเงินออม</option>
             </select>
-            <button class="btn-save" id="saveBtn" onclick="saveTransaction()">บันทึกข้อมูล (Enter)</button>
+            <button class="btn-save" id="saveBtn" onclick="saveTransaction()">บันทึกข้อมูล</button>
         </div>
     </div>
 
-    <!-- ประวัติ -->
     <div class="history-side">
         <div class="history-container">
             <div class="history-column">
@@ -120,11 +109,12 @@
 </div>
 
 <script>
-    const SCRIPT_URL = "https://google.com";
+    // *** สำคัญ: นำ URL ที่ได้จาก Google Apps Script มาใส่ตรงนี้ ***
+    const SCRIPT_URL = "ใส่_URL_ของคุณตรงนี้";
+
     let transactions = [];
     let jointBudget = parseFloat(localStorage.getItem('jointBudget')) || 10000;
 
-    // ฟังก์ชันแปลง ค.ศ. เป็น พ.ศ. และแสดงผลเวลาไทย
     function syncTimeDisplay() {
         const val = document.getElementById('datetime').value;
         if (!val) return;
@@ -149,10 +139,7 @@
         syncTimeDisplay();
     }
 
-    window.onload = function() {
-        setThaiTime();
-        loadData();
-    };
+    window.onload = function() { setThaiTime(); loadData(); };
 
     async function loadData() {
         const btn = document.getElementById('saveBtn');
@@ -162,41 +149,28 @@
             const data = await res.json();
             transactions = Array.isArray(data) ? data : [];
             updateUI();
-        } catch (e) { console.error("Error:", e); }
-        btn.innerText = "บันทึกข้อมูล (Enter)";
+        } catch (e) { console.error(e); }
+        btn.innerText = "บันทึกข้อมูล";
     }
 
     async function saveTransaction() {
         const amount = parseFloat(document.getElementById('amount').value);
-        if (!amount || amount <= 0) return alert('กรุณากรอกจำนวนเงิน');
-
+        if (!amount) return alert('กรุณากรอกเงิน');
         const btn = document.getElementById('saveBtn');
-        btn.disabled = true;
-        btn.innerText = "กำลังบันทึก...";
-
+        btn.disabled = true; btn.innerText = "กำลังบันทึก...";
         const data = {
-            action: 'save',
-            id: Date.now().toString(),
+            action: 'save', id: Date.now().toString(),
             datetime: document.getElementById('datetime').value,
             desc: document.getElementById('desc').value,
-            amount: amount,
-            owner: document.getElementById('owner').value,
-            type: document.getElementById('type').value
+            amount: amount, owner: document.getElementById('owner').value, type: document.getElementById('type').value
         };
-
         try {
             const response = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(data) });
-            const result = await response.json();
-            if (result.result === 'success') {
-                await loadData();
-                document.getElementById('amount').value = '';
-                setThaiTime();
-            } else {
-                alert("บันทึกไม่สำเร็จ: " + result.message);
-            }
-        } catch (e) { alert("บันทึกไม่สำเร็จ กรุณาเช็กชื่อแผ่นงาน transactions ใน Google Sheets"); }
-        btn.disabled = false;
-        btn.innerText = "บันทึกข้อมูล (Enter)";
+            await loadData();
+            document.getElementById('amount').value = '';
+            setThaiTime();
+        } catch (e) { alert("บันทึกไม่สำเร็จ เช็กชื่อ Sheet ว่าเป็น transactions หรือยัง?"); }
+        btn.disabled = false; btn.innerText = "บันทึกข้อมูล";
     }
 
     function updateUI() {
@@ -207,10 +181,6 @@
 
         [...transactions].reverse().forEach(t => {
             const amt = parseFloat(t.amount);
-            let colorClass = t.type === 'expense' ? 'amt-minus' : (t.type === 'income' ? 'amt-plus' : 'amt-save');
-            let prefix = t.type === 'expense' ? '-' : (t.type === 'income' ? '+' : '➡️');
-            if(t.type === 'save_out') prefix = '⬅️';
-
             const d = new Date(t.datetime);
             const thYear = d.getFullYear() + 543;
             const thDay = String(d.getDate()).padStart(2, '0');
@@ -219,7 +189,10 @@
             const thMin = String(d.getMinutes()).padStart(2, '0');
             const displayDate = `${thDay}/${thMonth}/${thYear} ${thHour}:${thMin}`;
 
-            let itemHtml = `<div class="item"><div><div style="font-weight:600; font-size:0.85rem;">${t.desc}</div><small style="color:#94a3b8; font-size:0.7rem;">${displayDate}</small></div><div class="${colorClass}">${prefix}฿${amt.toLocaleString(undefined, {minimumFractionDigits: 2})}</div></div>`;
+            let color = t.type === 'expense' ? 'amt-minus' : 'amt-plus';
+            if(t.type.startsWith('save')) color = 'amt-save';
+
+            let itemHtml = `<div class="item"><div><div style="font-weight:600;">${t.desc}</div><small>${displayDate}</small></div><div class="${color}">฿${amt.toLocaleString()}</div></div>`;
 
             if (t.type === 'expense') {
                 if (t.owner === 'ติณห์ภัทร') tackCash -= amt; else noonCash -= amt;
@@ -239,14 +212,11 @@
             else document.getElementById('historyNoon').innerHTML += itemHtml;
         });
 
-        document.getElementById('tackBalance').innerText = `฿${tackCash.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
-        document.getElementById('noonBalance').innerText = `฿${noonCash.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
-        document.getElementById('totalSavings').innerText = `฿${totalSavings.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
-        document.getElementById('netTotal').innerText = `฿${(tackCash+noonCash+totalSavings).toLocaleString(undefined, {minimumFractionDigits: 2})}`;
-        
+        document.getElementById('tackBalance').innerText = `฿${tackCash.toLocaleString()}`;
+        document.getElementById('noonBalance').innerText = `฿${noonCash.toLocaleString()}`;
+        document.getElementById('totalSavings').innerText = `฿${totalSavings.toLocaleString()}`;
+        document.getElementById('netTotal').innerText = `฿${(tackCash+noonCash+totalSavings).toLocaleString()}`;
         document.getElementById('jointBudgetTxt').innerText = `฿${jointBudget.toLocaleString()}`;
-        document.getElementById('jointSpentTxt').innerText = `ใช้ไป: ฿${jointSpent.toLocaleString()}`;
-        document.getElementById('jointRemainingTxt').innerText = `คงเหลือ: ฿${(jointBudget-jointSpent).toLocaleString()}`;
         document.getElementById('jointProgressBar').style.width = Math.min((jointSpent/jointBudget)*100, 100) + '%';
     }
 
