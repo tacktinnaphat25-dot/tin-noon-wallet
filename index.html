@@ -59,7 +59,7 @@
             <div class="sec-title">งบประมาณเดือนนี้</div>
             <div style="display:flex; justify-content:space-between; align-items:center;">
                 <button onclick="adjustJointBudget(-1000)" style="border:none; background:#eee; padding:5px 15px; border-radius:8px; cursor:pointer;">-</button>
-                <strong id="jointBudgetTxt">฿0</strong>
+                <strong id="jointBudgetTxt" style="font-size: 1.2rem;">฿0</strong>
                 <button onclick="adjustJointBudget(1000)" style="border:none; background:#eee; padding:5px 15px; border-radius:8px; cursor:pointer;">+</button>
             </div>
             <div class="progress-bg"><div id="jointProgressBar" class="progress-fill"></div></div>
@@ -67,7 +67,7 @@
 
         <div class="card">
             <div class="sec-title">บันทึกรายการ</div>
-            <input type="text" id="displayDatetime" readonly style="cursor:pointer;" onclick="document.getElementById('datetime').showPicker()">
+            <input type="text" id="displayDatetime" readonly style="cursor:pointer; font-weight: bold; color: var(--dark);" onclick="document.getElementById('datetime').showPicker()">
             <input type="datetime-local" id="datetime" style="display:none;" onchange="syncTimeDisplay()">
             
             <select id="desc">
@@ -109,22 +109,33 @@
 </div>
 
 <script>
-    // *** สำคัญ: นำ URL ที่ได้จาก Google Apps Script มาใส่ตรงนี้ ***
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwTqC5EElQG1jYNf94itQpQvG4MmTbKly8vfsGd2kTQkYpm1f5ZvTTx5Y5J2t6huq8S/exec";
-
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwJvfHPavtOX4Ju3AQHYic7blcKad-gOXAvhLLFLbjalpx9SboHiFXxutvFKqIVb72i/exec";
     let transactions = [];
     let jointBudget = parseFloat(localStorage.getItem('jointBudget')) || 10000;
 
+    // ฟังก์ชันจัดรูปแบบวันที่ให้อ่านออกแน่นอน
+    function formatThaiDate(dateStr) {
+        if (!dateStr) return "ไม่ระบุเวลา";
+        try {
+            // แทนที่ T ด้วยเว้นวรรค และตัดส่วนเกินออก
+            const cleanStr = dateStr.replace('T', ' ').split('.')[0];
+            const d = new Date(cleanStr.replace(/-/g, '/')); // ใช้ / แทน - เพื่อให้ Safari อ่านออก
+            
+            if (isNaN(d.getTime())) return dateStr; // ถ้ายังพังให้คืนค่าเดิม
+
+            const thYear = d.getFullYear() + 543;
+            const thDay = String(d.getDate()).padStart(2, '0');
+            const thMonth = String(d.getMonth() + 1).padStart(2, '0');
+            const thHour = String(d.getHours()).padStart(2, '0');
+            const thMin = String(d.getMinutes()).padStart(2, '0');
+            
+            return `${thDay}/${thMonth}/${thYear} ${thHour}:${thMin}`;
+        } catch (e) { return dateStr; }
+    }
+
     function syncTimeDisplay() {
         const val = document.getElementById('datetime').value;
-        if (!val) return;
-        const d = new Date(val);
-        const thYear = d.getFullYear() + 543;
-        const thDay = String(d.getDate()).padStart(2, '0');
-        const thMonth = String(d.getMonth() + 1).padStart(2, '0');
-        const thHour = String(d.getHours()).padStart(2, '0');
-        const thMin = String(d.getMinutes()).padStart(2, '0');
-        document.getElementById('displayDatetime').value = `${thDay}/${thMonth}/${thYear} ${thHour}:${thMin}`;
+        document.getElementById('displayDatetime').value = formatThaiDate(val);
     }
 
     function setThaiTime() {
@@ -165,11 +176,11 @@
             amount: amount, owner: document.getElementById('owner').value, type: document.getElementById('type').value
         };
         try {
-            const response = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(data) });
+            await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(data) });
             await loadData();
             document.getElementById('amount').value = '';
             setThaiTime();
-        } catch (e) { alert("บันทึกไม่สำเร็จ เช็กชื่อ Sheet ว่าเป็น transactions หรือยัง?"); }
+        } catch (e) { alert("บันทึกไม่สำเร็จ"); }
         btn.disabled = false; btn.innerText = "บันทึกข้อมูล";
     }
 
@@ -181,18 +192,12 @@
 
         [...transactions].reverse().forEach(t => {
             const amt = parseFloat(t.amount);
-            const d = new Date(t.datetime);
-            const thYear = d.getFullYear() + 543;
-            const thDay = String(d.getDate()).padStart(2, '0');
-            const thMonth = String(d.getMonth() + 1).padStart(2, '0');
-            const thHour = String(d.getHours()).padStart(2, '0');
-            const thMin = String(d.getMinutes()).padStart(2, '0');
-            const displayDate = `${thDay}/${thMonth}/${thYear} ${thHour}:${thMin}`;
+            const displayDate = formatThaiDate(t.datetime);
 
             let color = t.type === 'expense' ? 'amt-minus' : 'amt-plus';
             if(t.type.startsWith('save')) color = 'amt-save';
 
-            let itemHtml = `<div class="item"><div><div style="font-weight:600;">${t.desc}</div><small>${displayDate}</small></div><div class="${color}">฿${amt.toLocaleString()}</div></div>`;
+            let itemHtml = `<div class="item"><div><div style="font-weight:600;">${t.desc}</div><small style="color:#94a3b8;">${displayDate}</small></div><div class="${color}">฿${amt.toLocaleString()}</div></div>`;
 
             if (t.type === 'expense') {
                 if (t.owner === 'ติณห์ภัทร') tackCash -= amt; else noonCash -= amt;
