@@ -1,150 +1,210 @@
-<script>
-    // 1. ตั้งค่า URL ของ Google Apps Script (เอา URL ที่คุณก๊อปมาวางตรงนี้)
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwojYICmhIQcBuIkV3IABvLzOY9oj5eMpxO1xVzmUKIAWQRebBL26slR3JWhEjaRDoE/exec";
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ติณห์ภัทร & นัฐณวรรณ Wallet Pro</title>
+    <link href="https://googleapis.com" rel="stylesheet">
+    <style>
+        :root { --bg: #f4f7fe; --card: #ffffff; --tack: #3b82f6; --noon: #ec4899; --success: #10b981; --danger: #ef4444; --warning: #f59e0b; --dark: #1e293b; }
+        body { font-family: 'Kanit', sans-serif; background-color: var(--bg); margin: 0; padding: 15px; color: var(--dark); }
+        .main-wrapper { display: grid; grid-template-columns: 350px 1fr; gap: 20px; max-width: 1300px; margin: auto; }
+        @media (max-width: 1000px) { .main-wrapper { grid-template-columns: 1fr; } }
+        .summary-card { background: var(--dark); color: white; padding: 20px; border-radius: 20px; margin-bottom: 15px; box-shadow: 0 10px 20px rgba(0,0,0,0.15); }
+        .balance-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
+        .balance-box { background: rgba(255,255,255,0.05); padding: 15px; border-radius: 15px; border-top: 4px solid var(--tack); }
+        .balance-box.noon { border-top-color: var(--noon); }
+        .box-label { font-size: 0.75rem; opacity: 0.7; margin-bottom: 5px; display: block; }
+        .box-amt { font-size: 1.3rem; font-weight: 600; }
+        .total-info { border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px; display: flex; justify-content: space-around; text-align: center; }
+        .card { background: var(--card); border-radius: 20px; padding: 18px; margin-bottom: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .sec-title { font-size: 0.95rem; font-weight: 600; margin-bottom: 12px; border-left: 4px solid var(--tack); padding-left: 10px; display: flex; justify-content: space-between; align-items: center; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 0.9rem; background: #f8fafc; font-family: inherit; margin-bottom: 10px; box-sizing: border-box; }
+        .btn-save { width: 100%; background: var(--dark); color: white; border: none; padding: 12px; border-radius: 10px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: 0.2s; }
+        .history-container { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
+        .history-scroll { max-height: 400px; overflow-y: auto; padding-right: 5px; }
+        .column-header { padding: 10px; border-radius: 12px; margin-bottom: 10px; text-align: center; color: white; font-weight: 600; font-size: 0.9rem; }
+        .header-tack { background: var(--tack); }
+        .header-noon { background: var(--noon); }
+        .header-save { background: var(--warning); color: var(--dark); }
+        .item { background: white; border-radius: 15px; padding: 12px; margin-bottom: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); display: flex; justify-content: space-between; align-items: center; }
+        .amt-plus { color: var(--success); font-weight: 600; }
+        .amt-minus { color: var(--danger); font-weight: 600; }
+        .amt-save { color: var(--warning); font-weight: 600; }
+        .progress-bg { background: #e2e8f0; height: 8px; border-radius: 4px; overflow: hidden; margin: 10px 0; }
+        .progress-fill { height: 100%; transition: 0.5s; width: 0%; background: var(--success); }
+    </style>
+</head>
+<body>
 
+<div class="main-wrapper">
+    <div class="control-side">
+        <div class="summary-card">
+            <div class="balance-grid">
+                <div class="balance-box">
+                    <span class="box-label">💵 ติณห์ภัทร</span>
+                    <div class="box-amt" id="tackBalance">฿0.00</div>
+                </div>
+                <div class="balance-box noon">
+                    <span class="box-label">💵 นัฐณวรรณ</span>
+                    <div class="box-amt" id="noonBalance">฿0.00</div>
+                </div>
+            </div>
+            <div class="total-info">
+                <div><span class="box-label">💰 เงินออมสะสม</span><div style="font-weight:600; color:var(--warning)" id="totalSavings">฿0.00</div></div>
+                <div><span class="box-label">🌎 เงินรวมทั้งหมด</span><div style="font-weight:600;" id="netTotal">฿0.00</div></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="sec-title">งบประมาณเดือนนี้</div>
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <button onclick="adjustJointBudget(-1000)" style="border:none; background:#eee; padding:5px 10px; border-radius:5px; cursor:pointer;">-</button>
+                <strong id="jointBudgetTxt">฿0</strong>
+                <button onclick="adjustJointBudget(1000)" style="border:none; background:#eee; padding:5px 10px; border-radius:5px; cursor:pointer;">+</button>
+            </div>
+            <div class="progress-bg"><div id="jointProgressBar" class="progress-fill"></div></div>
+            <div style="display:flex; justify-content:space-between; font-size:0.7rem;">
+                <span id="jointSpentTxt" style="color:var(--danger)">ใช้ไป: ฿0</span>
+                <span id="jointRemainingTxt" style="color:var(--success)">คงเหลือ: ฿0</span>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="sec-title" id="formTitle">บันทึกรายการ</div>
+            <input type="hidden" id="editId">
+            <input type="datetime-local" id="datetime">
+            <select id="desc">
+                <option>ค่าอาหาร</option><option>ค่าน้ำมัน</option><option>ค่ารถ</option>
+                <option>ค่าใช้จ่ายส่วนตัว</option><option>เงินเดือน</option><option>เงินออม (พิเศษ)</option>
+                <option>ค่าเกม PS5</option><option>ค่าไปเที่ยว</option><option>เงินเสริม</option>
+            </select>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                <input type="number" id="amount" placeholder="0.00" step="0.01">
+                <select id="owner"><option value="ติณห์ภัทร">ติณห์ภัทร</option><option value="นัฐณวรรณ">นัฐณวรรณ</option></select>
+            </div>
+            <select id="type">
+                <option value="expense">รายจ่าย (-)</option><option value="income">รายรับ (+)</option>
+                <option value="save_in">➡️ นำเข้าเงินออม</option><option value="save_out">⬅️ นำออกเงินออม</option>
+            </select>
+            <button class="btn-save" id="saveBtn" onclick="saveTransaction()">บันทึกข้อมูล (Enter)</button>
+        </div>
+    </div>
+
+    <div class="history-side">
+        <div class="history-container">
+            <div class="history-column">
+                <div class="column-header header-tack">ประวัติ: ติณห์ภัทร</div>
+                <div id="historyTack" class="history-scroll"></div>
+            </div>
+            <div class="history-column">
+                <div class="column-header header-noon">ประวัติ: นัฐณวรรณ</div>
+                <div id="historyNoon" class="history-scroll"></div>
+            </div>
+        </div>
+        <div class="history-column" style="width: 100%;">
+            <div class="column-header header-save">📂 ประวัติเงินออมสะสม</div>
+            <div id="historySavings" class="history-scroll"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const SCRIPT_URL = "https://google.com";
     let transactions = [];
     let jointBudget = parseFloat(localStorage.getItem('jointBudget')) || 10000;
-    
-    // ตั้งค่าเวลาปัจจุบัน
-    const now = new Date();
-    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-    document.getElementById('datetime').value = now.toISOString().slice(0, 16);
 
-    // 2. ฟังก์ชันดึงข้อมูลจาก Google Sheets (โหลดตอนเปิดแอป)
-    async function loadData() {
-        document.getElementById('saveBtn').innerText = "กำลังโหลดข้อมูล...";
-        try {
-            const response = await fetch(SCRIPT_URL);
-            transactions = await response.json();
-            updateUI();
-        } catch (error) {
-            console.error("Error loading data:", error);
-            alert("โหลดข้อมูลไม่สำเร็จ กรุณาลองใหม่");
-        } finally {
-            document.getElementById('saveBtn').innerText = "บันทึกข้อมูล (Enter)";
-        }
-    }
-
-    // 3. ฟังก์ชันบันทึกข้อมูลลง Google Sheets
-    async function saveTransaction() {
-        const id = document.getElementById('editId').value || Date.now().toString();
-        const datetime = document.getElementById('datetime').value;
-        const desc = document.getElementById('desc').value;
-        const amount = parseFloat(document.getElementById('amount').value);
-        const owner = document.getElementById('owner').value;
-        const type = document.getElementById('type').value;
-
-        if (!amount || amount <= 0) {
-            alert('กรุณากรอกจำนวนเงินให้ถูกต้อง');
-            return;
-        }
-
-        const data = { action: 'save', id, datetime, desc, amount, owner, type };
-
-        document.getElementById('saveBtn').innerText = "กำลังบันทึก...";
-        document.getElementById('saveBtn').disabled = true;
-
-        try {
-            await fetch(SCRIPT_URL, {
-                method: 'POST',
-                body: JSON.stringify(data)
-            });
-            
-            // หลังจากบันทึกสำเร็จ ให้โหลดข้อมูลใหม่ทั้งหมด
-            await loadData();
-            resetForm();
-        } catch (error) {
-            alert("บันทึกไม่สำเร็จ กรุณาลองใหม่");
-        } finally {
-            document.getElementById('saveBtn').disabled = false;
-            document.getElementById('saveBtn').innerText = "บันทึกข้อมูล (Enter)";
-        }
-    }
-
-    // --- ส่วนที่เหลือเหมือนเดิม แต่เปลี่ยนการจัดการ Array เป็นการเรียก loadData ---
-
-    function adjustJointBudget(val) {
-        jointBudget += val;
-        if (jointBudget < 0) jointBudget = 0;
-        localStorage.setItem('jointBudget', jointBudget);
-        updateUI();
-    }
-
-    function resetForm() {
-        document.getElementById('editId').value = '';
-        document.getElementById('amount').value = '';
-        document.getElementById('formTitle').innerText = 'บันทึกรายการ';
-        document.getElementById('cancelBtn').style.display = 'none';
+    window.onload = function() {
         const now = new Date();
         now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
         document.getElementById('datetime').value = now.toISOString().slice(0, 16);
+        loadData();
+    };
+
+    async function loadData() {
+        document.getElementById('saveBtn').innerText = "กำลังโหลดข้อมูล...";
+        try {
+            const res = await fetch(SCRIPT_URL);
+            transactions = await res.json();
+            updateUI();
+        } catch (e) { console.error(e); }
+        document.getElementById('saveBtn').innerText = "บันทึกข้อมูล (Enter)";
+    }
+
+    async function saveTransaction() {
+        const amount = parseFloat(document.getElementById('amount').value);
+        if (!amount || amount <= 0) return alert('กรุณากรอกจำนวนเงิน');
+
+        const data = {
+            action: 'save',
+            id: Date.now().toString(),
+            datetime: document.getElementById('datetime').value,
+            desc: document.getElementById('desc').value,
+            amount: amount,
+            owner: document.getElementById('owner').value,
+            type: document.getElementById('type').value
+        };
+
+        document.getElementById('saveBtn').disabled = true;
+        document.getElementById('saveBtn').innerText = "กำลังบันทึก...";
+
+        try {
+            await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(data) });
+            await loadData();
+            document.getElementById('amount').value = '';
+        } catch (e) { alert("บันทึกไม่สำเร็จ"); }
+        document.getElementById('saveBtn').disabled = false;
+        document.getElementById('saveBtn').innerText = "บันทึกข้อมูล (Enter)";
     }
 
     function updateUI() {
         let tackCash = 0, noonCash = 0, totalSavings = 0, jointSpent = 0;
-        const historyTackEl = document.getElementById('historyTack');
-        const historyNoonEl = document.getElementById('historyNoon');
-        const historySavingsEl = document.getElementById('historySavings');
-        
-        historyTackEl.innerHTML = '';
-        historyNoonEl.innerHTML = '';
-        historySavingsEl.innerHTML = '';
+        document.getElementById('historyTack').innerHTML = '';
+        document.getElementById('historyNoon').innerHTML = '';
+        document.getElementById('historySavings').innerHTML = '';
 
-        // เรียงลำดับจากใหม่ไปเก่า
-        const sortedData = [...transactions].reverse();
+        [...transactions].reverse().forEach(t => {
+            let colorClass = t.type === 'expense' ? 'amt-minus' : (t.type === 'income' ? 'amt-plus' : 'amt-save');
+            let prefix = t.type === 'expense' ? '-' : (t.type === 'income' ? '+' : '➡️');
+            if(t.type === 'save_out') prefix = '⬅️';
 
-        sortedData.forEach(t => {
-            let itemHtml = `<div class="item"><div style="flex:1;"><div style="font-weight:600; font-size:0.85rem;">${t.desc}</div><small style="color:#94a3b8; font-size:0.7rem;">${t.datetime.replace('T', ' ')}</small></div><div style="text-align:right;">`;
+            let itemHtml = `<div class="item"><div><div style="font-weight:600; font-size:0.85rem;">${t.desc}</div><small style="color:#94a3b8; font-size:0.7rem;">${t.datetime.replace('T', ' ')}</small></div><div class="${colorClass}">${prefix}฿${parseFloat(t.amount).toLocaleString(undefined, {minimumFractionDigits: 2})}</div></div>`;
 
             const amt = parseFloat(t.amount);
             if (t.type === 'expense') {
-                itemHtml += `<span class="amt-minus">-฿${amt.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>`;
-                if (t.owner === 'ติณห์ภัทร') tackCash -= amt;
-                if (t.owner === 'นัฐณวรรณ') noonCash -= amt;
+                if (t.owner === 'ติณห์ภัทร') tackCash -= amt; else noonCash -= amt;
                 jointSpent += amt;
             } else if (t.type === 'income') {
-                itemHtml += `<span class="amt-plus">+฿${amt.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>`;
-                if (t.owner === 'ติณห์ภัทร') tackCash += amt;
-                if (t.owner === 'นัฐณวรรณ') noonCash += amt;
+                if (t.owner === 'ติณห์ภัทร') tackCash += amt; else noonCash += amt;
             } else if (t.type === 'save_in') {
-                itemHtml += `<span class="amt-save">➡️ ฿${amt.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>`;
-                if (t.owner === 'ติณห์ภัทร') tackCash -= amt;
-                if (t.owner === 'นัฐณวรรณ') noonCash -= amt;
+                if (t.owner === 'ติณห์ภัทร') tackCash -= amt; else noonCash -= amt;
                 totalSavings += amt;
             } else if (t.type === 'save_out') {
-                itemHtml += `<span class="amt-plus">⬅️ ฿${amt.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>`;
-                if (t.owner === 'ติณห์ภัทร') tackCash += amt;
-                if (t.owner === 'นัฐณวรรณ') noonCash += amt;
+                if (t.owner === 'ติณห์ภัทร') tackCash += amt; else noonCash += amt;
                 totalSavings -= amt;
             }
 
-            itemHtml += `</div></div>`;
-
-            if (t.type === 'save_in' || t.type === 'save_out') {
-                historySavingsEl.innerHTML += itemHtml;
-            } else if (t.owner === 'ติณห์ภัทร') {
-                historyTackEl.innerHTML += itemHtml;
-            } else if (t.owner === 'นัฐณวรรณ') {
-                historyNoonEl.innerHTML += itemHtml;
-            }
+            if (t.type.startsWith('save')) document.getElementById('historySavings').innerHTML += itemHtml;
+            else if (t.owner === 'ติณห์ภัทร') document.getElementById('historyTack').innerHTML += itemHtml;
+            else document.getElementById('historyNoon').innerHTML += itemHtml;
         });
 
-        document.getElementById('tackBalance').innerText = `฿${tackCash.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
-        document.getElementById('noonBalance').innerText = `฿${noonCash.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
-        document.getElementById('totalSavings').innerText = `฿${totalSavings.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
-        document.getElementById('netTotal').innerText = `฿${(tackCash + noonCash + totalSavings).toLocaleString(undefined, {minimumFractionDigits: 2})}`;
-
-        const remaining = jointBudget - jointSpent;
+        document.getElementById('tackBalance').innerText = `฿${tackCash.toLocaleString()}`;
+        document.getElementById('noonBalance').innerText = `฿${noonCash.toLocaleString()}`;
+        document.getElementById('totalSavings').innerText = `฿${totalSavings.toLocaleString()}`;
+        document.getElementById('netTotal').innerText = `฿${(tackCash+noonCash+totalSavings).toLocaleString()}`;
+        
         document.getElementById('jointBudgetTxt').innerText = `฿${jointBudget.toLocaleString()}`;
         document.getElementById('jointSpentTxt').innerText = `ใช้ไป: ฿${jointSpent.toLocaleString()}`;
-        document.getElementById('jointRemainingTxt').innerText = `คงเหลือ: ฿${remaining.toLocaleString()}`;
-        
-        let percent = (jointSpent / jointBudget) * 100;
-        if (percent > 100) percent = 100;
-        if (jointBudget === 0) percent = 0;
-        document.getElementById('jointProgressBar').style.width = percent + '%';
+        document.getElementById('jointRemainingTxt').innerText = `คงเหลือ: ฿${(jointBudget-jointSpent).toLocaleString()}`;
+        document.getElementById('jointProgressBar').style.width = Math.min((jointSpent/jointBudget)*100, 100) + '%';
     }
 
-    // โหลดข้อมูลเมื่อเปิดเว็บ
-    loadData();
+    function adjustJointBudget(val) {
+        jointBudget += val;
+        localStorage.setItem('jointBudget', jointBudget);
+        updateUI();
+    }
 </script>
+</body>
+</html>
