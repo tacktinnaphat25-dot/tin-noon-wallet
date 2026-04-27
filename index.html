@@ -10,28 +10,20 @@
         body { font-family: 'Kanit', sans-serif; background-color: var(--bg); margin: 0; padding: 15px; color: var(--dark); }
         .main-wrapper { display: grid; grid-template-columns: 350px 1fr; gap: 20px; max-width: 1300px; margin: auto; }
         @media (max-width: 1000px) { .main-wrapper { grid-template-columns: 1fr; } }
-        .summary-card { background: var(--dark); color: white; padding: 20px; border-radius: 20px; margin-bottom: 15px; box-shadow: 0 10px 20px rgba(0,0,0,0.15); }
+        .summary-card { background: var(--dark); color: white; padding: 20px; border-radius: 20px; margin-bottom: 15px; }
         .balance-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
         .balance-box { background: rgba(255,255,255,0.05); padding: 15px; border-radius: 15px; border-top: 4px solid var(--tack); }
         .balance-box.noon { border-top-color: var(--noon); }
-        .box-label { font-size: 0.75rem; opacity: 0.7; margin-bottom: 5px; display: block; }
         .box-amt { font-size: 1.3rem; font-weight: 600; }
-        .total-info { border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px; display: flex; justify-content: space-around; text-align: center; }
         .card { background: var(--card); border-radius: 20px; padding: 18px; margin-bottom: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-        .sec-title { font-size: 0.95rem; font-weight: 600; margin-bottom: 12px; border-left: 4px solid var(--tack); padding-left: 10px; display: flex; justify-content: space-between; align-items: center; }
-        input, select { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 12px; font-size: 1rem; background: #f8fafc; font-family: inherit; margin-bottom: 10px; box-sizing: border-box; }
-        .btn-save { width: 100%; background: var(--dark); color: white; border: none; padding: 15px; border-radius: 12px; font-size: 1.1rem; font-weight: 600; cursor: pointer; transition: 0.2s; }
-        .history-scroll { max-height: 400px; overflow-y: auto; padding-right: 5px; }
-        .column-header { padding: 10px; border-radius: 12px; margin-bottom: 10px; text-align: center; color: white; font-weight: 600; font-size: 0.9rem; }
-        .header-tack { background: var(--tack); }
-        .header-noon { background: var(--noon); }
-        .header-save { background: var(--warning); color: var(--dark); }
-        .item { background: white; border-radius: 15px; padding: 12px; margin-bottom: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); display: flex; justify-content: space-between; align-items: center; }
+        input, select { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 12px; font-size: 1rem; margin-bottom: 10px; box-sizing: border-box; }
+        .btn-save { width: 100%; background: var(--dark); color: white; border: none; padding: 15px; border-radius: 12px; font-size: 1.1rem; font-weight: 600; cursor: pointer; }
+        .item { background: white; border-radius: 15px; padding: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
         .amt-plus { color: var(--success); font-weight: 600; }
         .amt-minus { color: var(--danger); font-weight: 600; }
-        .amt-save { color: var(--warning); font-weight: 600; }
+        .btn-delete { background: #fee2e2; color: #ef4444; border: none; padding: 5px 12px; border-radius: 8px; font-size: 0.75rem; cursor: pointer; margin-top: 8px; font-family: 'Kanit'; }
         .progress-bg { background: #e2e8f0; height: 8px; border-radius: 4px; overflow: hidden; margin: 10px 0; }
-        .progress-fill { height: 100%; transition: 0.5s; width: 0%; background: var(--success); }
+        .progress-fill { height: 100%; width: 0%; background: var(--success); transition: 0.5s; }
     </style>
 </head>
 <body>
@@ -40,95 +32,49 @@
     <div class="control-side">
         <div class="summary-card">
             <div class="balance-grid">
-                <div class="balance-box">
-                    <span class="box-label">💵 ติณห์ภัทร</span>
-                    <div class="box-amt" id="tackBalance">฿0.00</div>
-                </div>
-                <div class="balance-box noon">
-                    <span class="box-label">💵 นัฐณวรรณ</span>
-                    <div class="box-amt" id="noonBalance">฿0.00</div>
-                </div>
+                <div class="balance-box"><span>💵 ติณห์ภัทร</span><div class="box-amt" id="tackBalance">฿0.00</div></div>
+                <div class="balance-box noon"><span>💵 นัฐณวรรณ</span><div class="box-amt" id="noonBalance">฿0.00</div></div>
             </div>
-            <div class="total-info">
-                <div><span class="box-label">💰 เงินออมสะสม</span><div style="font-weight:600; color:var(--warning)" id="totalSavings">฿0.00</div></div>
-                <div><span class="box-label">🌎 เงินรวมทั้งหมด</span><div style="font-weight:600;" id="netTotal">฿0.00</div></div>
-            </div>
+            <div style="text-align:center;">💰 เงินรวม: <span id="netTotal">฿0.00</span></div>
         </div>
 
         <div class="card">
-            <div class="sec-title">งบประมาณเดือนนี้</div>
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-                <button onclick="adjustJointBudget(-1000)" style="border:none; background:#eee; padding:5px 15px; border-radius:8px; cursor:pointer;">-</button>
-                <strong id="jointBudgetTxt" style="font-size: 1.2rem;">฿0</strong>
-                <button onclick="adjustJointBudget(1000)" style="border:none; background:#eee; padding:5px 15px; border-radius:8px; cursor:pointer;">+</button>
-            </div>
+            <strong>งบประมาณ</strong>
             <div class="progress-bg"><div id="jointProgressBar" class="progress-fill"></div></div>
         </div>
 
         <div class="card">
-            <div class="sec-title">บันทึกรายการ</div>
-            <input type="text" id="displayDatetime" readonly style="cursor:pointer; font-weight: bold; color: var(--dark);" onclick="document.getElementById('datetime').showPicker()">
+            <div style="margin-bottom: 5px; font-size: 0.8rem;">วันที่/เวลา</div>
+            <input type="text" id="displayDatetime" readonly style="cursor:pointer; font-weight:bold;" onclick="document.getElementById('datetime').showPicker()">
             <input type="datetime-local" id="datetime" style="display:none;" onchange="syncTimeDisplay()">
             
-            <select id="desc">
-                <option>ค่าอาหาร</option><option>ค่าของกิน/ขนม</option><option>ค่าน้ำมัน</option>
-                <option>ค่าเน็ตมือถือ</option><option>ค่าสมาชิก (Netflix/Spotify)</option>
-                <option>ค่ารถ/ค่าเดินทาง</option><option>ค่าของใช้ในบ้าน</option><option>ค่าอาหารสัตว์</option>
-                <option>ค่าซ่อมแซม/ดูแลรถ</option><option>ค่าใช้จ่ายส่วนตัว</option><option>ค่าช้อปปิ้ง</option>
-                <option>ค่าไปเที่ยว</option><option>ค่าเกม PS5</option><option>เงินเดือน</option>
-                <option>เงินเสริม</option><option>เงินออม (พิเศษ)</option>
-            </select>
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-                <input type="number" id="amount" placeholder="จำนวนเงิน" step="0.01" inputmode="decimal">
-                <select id="owner"><option value="ติณห์ภัทร">ติณห์ภัทร</option><option value="นัฐณวรรณ">นัฐณวรรณ</option></select>
-            </div>
-            <select id="type">
-                <option value="expense">รายจ่าย (-)</option><option value="income">รายรับ (+)</option>
-                <option value="save_in">➡️ นำเข้าเงินออม</option><option value="save_out">⬅️ นำออกเงินออม</option>
-            </select>
+            <select id="desc"><option>ค่าอาหาร</option><option>ค่าของกิน/ขนม</option><option>ค่าน้ำมัน</option><option>เงินเดือน</option><option>ค่าไปเที่ยว</option></select>
+            <input type="number" id="amount" placeholder="จำนวนเงิน" inputmode="decimal">
+            <select id="owner"><option>ติณห์ภัทร</option><option>นัฐณวรรณ</option></select>
+            <select id="type"><option value="expense">รายจ่าย (-)</option><option value="income">รายรับ (+)</option></select>
             <button class="btn-save" id="saveBtn" onclick="saveTransaction()">บันทึกข้อมูล</button>
         </div>
     </div>
 
     <div class="history-side">
-        <div class="history-container">
-            <div class="history-column">
-                <div class="column-header header-tack">ประวัติ: ติณห์ภัทร</div>
-                <div id="historyTack" class="history-scroll"></div>
-            </div>
-            <div class="history-column">
-                <div class="column-header header-noon">ประวัติ: นัฐณวรรณ</div>
-                <div id="historyNoon" class="history-scroll"></div>
-            </div>
-        </div>
-        <div class="history-column" style="width: 100%;">
-            <div class="column-header header-save">📂 ประวัติเงินออมสะสม</div>
-            <div id="historySavings" class="history-scroll"></div>
-        </div>
+        <div id="historyList"></div>
     </div>
 </div>
 
 <script>
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwJvfHPavtOX4Ju3AQHYic7blcKad-gOXAvhLLFLbjalpx9SboHiFXxutvFKqIVb72i/exec";
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby7FxK36Rmm4g9gZU84SOnm-NBBW5T-K2KS6FcfXEdNVsPbLnkQmLqm-CiU4lGpZgE/exec";
     let transactions = [];
-    let jointBudget = parseFloat(localStorage.getItem('jointBudget')) || 10000;
 
-    // ฟังก์ชันจัดรูปแบบวันที่ให้อ่านออกแน่นอน
     function formatThaiDate(dateStr) {
         if (!dateStr) return "ไม่ระบุเวลา";
         try {
-            // แทนที่ T ด้วยเว้นวรรค และตัดส่วนเกินออก
-            const cleanStr = dateStr.replace('T', ' ').split('.')[0];
-            const d = new Date(cleanStr.replace(/-/g, '/')); // ใช้ / แทน - เพื่อให้ Safari อ่านออก
-            
-            if (isNaN(d.getTime())) return dateStr; // ถ้ายังพังให้คืนค่าเดิม
-
+            const d = new Date(dateStr.replace('T', ' ').replace(/-/g, '/'));
+            if (isNaN(d.getTime())) return dateStr;
             const thYear = d.getFullYear() + 543;
             const thDay = String(d.getDate()).padStart(2, '0');
             const thMonth = String(d.getMonth() + 1).padStart(2, '0');
             const thHour = String(d.getHours()).padStart(2, '0');
             const thMin = String(d.getMinutes()).padStart(2, '0');
-            
             return `${thDay}/${thMonth}/${thYear} ${thHour}:${thMin}`;
         } catch (e) { return dateStr; }
     }
@@ -150,30 +96,24 @@
         syncTimeDisplay();
     }
 
-    window.onload = function() { setThaiTime(); loadData(); };
-
     async function loadData() {
-        const btn = document.getElementById('saveBtn');
-        btn.innerText = "กำลังโหลดข้อมูล...";
         try {
             const res = await fetch(SCRIPT_URL);
-            const data = await res.json();
-            transactions = Array.isArray(data) ? data : [];
+            transactions = await res.json();
             updateUI();
         } catch (e) { console.error(e); }
-        btn.innerText = "บันทึกข้อมูล";
     }
 
     async function saveTransaction() {
-        const amount = parseFloat(document.getElementById('amount').value);
-        if (!amount) return alert('กรุณากรอกเงิน');
         const btn = document.getElementById('saveBtn');
         btn.disabled = true; btn.innerText = "กำลังบันทึก...";
         const data = {
             action: 'save', id: Date.now().toString(),
             datetime: document.getElementById('datetime').value,
             desc: document.getElementById('desc').value,
-            amount: amount, owner: document.getElementById('owner').value, type: document.getElementById('type').value
+            amount: document.getElementById('amount').value,
+            owner: document.getElementById('owner').value,
+            type: document.getElementById('type').value
         };
         try {
             await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(data) });
@@ -184,48 +124,40 @@
         btn.disabled = false; btn.innerText = "บันทึกข้อมูล";
     }
 
-    function updateUI() {
-        let tackCash = 0, noonCash = 0, totalSavings = 0, jointSpent = 0;
-        document.getElementById('historyTack').innerHTML = '';
-        document.getElementById('historyNoon').innerHTML = '';
-        document.getElementById('historySavings').innerHTML = '';
-
-        [...transactions].reverse().forEach(t => {
-            const amt = parseFloat(t.amount);
-            const displayDate = formatThaiDate(t.datetime);
-
-            let color = t.type === 'expense' ? 'amt-minus' : 'amt-plus';
-            if(t.type.startsWith('save')) color = 'amt-save';
-
-            let itemHtml = `<div class="item"><div><div style="font-weight:600;">${t.desc}</div><small style="color:#94a3b8;">${displayDate}</small></div><div class="${color}">฿${amt.toLocaleString()}</div></div>`;
-
-            if (t.type === 'expense') {
-                if (t.owner === 'ติณห์ภัทร') tackCash -= amt; else noonCash -= amt;
-                jointSpent += amt;
-            } else if (t.type === 'income') {
-                if (t.owner === 'ติณห์ภัทร') tackCash += amt; else noonCash += amt;
-            } else if (t.type === 'save_in') {
-                if (t.owner === 'ติณห์ภัทร') tackCash -= amt; else noonCash -= amt;
-                totalSavings += amt;
-            } else if (t.type === 'save_out') {
-                if (t.owner === 'ติณห์ภัทร') tackCash += amt; else noonCash += amt;
-                totalSavings -= amt;
-            }
-
-            if (t.type.startsWith('save')) document.getElementById('historySavings').innerHTML += itemHtml;
-            else if (t.owner === 'ติณห์ภัทร') document.getElementById('historyTack').innerHTML += itemHtml;
-            else document.getElementById('historyNoon').innerHTML += itemHtml;
-        });
-
-        document.getElementById('tackBalance').innerText = `฿${tackCash.toLocaleString()}`;
-        document.getElementById('noonBalance').innerText = `฿${noonCash.toLocaleString()}`;
-        document.getElementById('totalSavings').innerText = `฿${totalSavings.toLocaleString()}`;
-        document.getElementById('netTotal').innerText = `฿${(tackCash+noonCash+totalSavings).toLocaleString()}`;
-        document.getElementById('jointBudgetTxt').innerText = `฿${jointBudget.toLocaleString()}`;
-        document.getElementById('jointProgressBar').style.width = Math.min((jointSpent/jointBudget)*100, 100) + '%';
+    async function deleteItem(id) {
+        if (!confirm('ยืนยันจะลบรายการนี้?')) return;
+        try {
+            await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({action: 'delete', id: id}) });
+            await loadData();
+        } catch (e) { alert("ลบไม่สำเร็จ"); }
     }
 
-    function adjustJointBudget(val) { jointBudget += val; localStorage.setItem('jointBudget', jointBudget); updateUI(); }
+    function updateUI() {
+        let tack = 0, noon = 0, listHtml = '';
+        [...transactions].reverse().forEach(t => {
+            const amt = parseFloat(t.amount);
+            if (t.type === 'expense') {
+                if (t.owner === 'ติณห์ภัทร') tack -= amt; else noon -= amt;
+            } else {
+                if (t.owner === 'ติณห์ภัทร') tack += amt; else noon += amt;
+            }
+            listHtml += `
+                <div class="item">
+                    <div>
+                        <b>${t.desc}</b> (${t.owner})<br>
+                        <small style="color:#94a3b8;">${formatThaiDate(t.datetime)}</small><br>
+                        <button class="btn-delete" onclick="deleteItem('${t.id}')">ลบรายการนี้</button>
+                    </div>
+                    <div class="${t.type === 'expense' ? 'amt-minus' : 'amt-plus'}">฿${amt.toLocaleString()}</div>
+                </div>`;
+        });
+        document.getElementById('tackBalance').innerText = `฿${tack.toLocaleString()}`;
+        document.getElementById('noonBalance').innerText = `฿${noon.toLocaleString()}`;
+        document.getElementById('netTotal').innerText = `฿${(tack+noon).toLocaleString()}`;
+        document.getElementById('historyList').innerHTML = listHtml;
+    }
+
+    window.onload = () => { setThaiTime(); loadData(); };
 </script>
 </body>
 </html>
